@@ -30,6 +30,13 @@ CREATE TABLE courses (
     updated_at TIMESTAMP DEFAULT now()
 );
 
+create table category (
+    id serial primary key,
+    name varchar(50),
+    created_at timestamp default now(),
+    updated_at timestamp default now()
+)
+
 
 
 
