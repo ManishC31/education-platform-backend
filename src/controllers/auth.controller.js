@@ -1,57 +1,46 @@
-import { User } from "../services/user.service.js";
-import jwt from "jsonwebtoken";
+import UserModel from "../models/users.model.js";
+import { ShowLog, ShowError } from "../utils/logger.js";
 import { sendResponse } from "../utils/responses.js";
 import bcrypt from "bcryptjs";
 
-export const registerUser = async (req, res) => {
+export const loginStudent = async (req, res) => {
+  ShowLog("BODY:", req.body);
+  const { email, password } = req.body;
+
   try {
-    const data = { ...req.body, role: "student" };
-    const user = await User.createUser(data);
+    const user = await UserModel.findOne({ where: { email } });
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    if (!user) {
+      return sendResponse(res, 400, "User not found with email");
+    }
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
+    const isValidPassword = await bcrypt.compare(password, user.password);
 
-    sendResponse(res, 201, "User registered successfully", { token, user });
+    if (!isValidPassword) {
+      return sendResponse(res, 400, "Email & password do not match");
+    }
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    ShowLog("token:", token);
+
+    // set token in cookie
+    res.cookie("token", token, { httpOnly: true, secure: true, maxAge: 1000 * 60 * 60 * 24 });
+
+    // remove unwanted fields
+    delete user.password;
+    delete user.created_at;
+    delete user.updated_at;
+    return sendResponse(res, 200, "Login successful", { user, token });
   } catch (error) {
-    console.log("Err in registerUser:", error);
-    sendResponse(res, 500, error.message || "Failed to register user");
+    ShowError(error);
+    return sendResponse(res, 500, "Failed to login student");
   }
 };
 
-export const loginUser = async (req, res) => {
-  try {
-    const existingUser = await User.getUserByEmail(req.body.email);
+export const loginInstructor = async (req, res) => {};
 
-    if (!existingUser) {
-      sendResponse(res, 400, "No user found with email");
-    }
-
-    // check password
-    const isValidPassword = await bcrypt.compare(req.body.password, existingUser.password);
-
-    if (!isValidPassword) {
-      sendResponse(res, 400, "Email & password are not matching");
-    }
-
-    const token = jwt.sign({ id: existingUser.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
-
-    delete existingUser.password;
-    sendResponse(res, 200, "User logged in successfully", { token, user: existingUser });
-  } catch (error) {
-    console.log("Err in loginUser:", error);
-    sendResponse(res, 500, error.message || "Failed to login user");
-  }
+export const logoutUser = async (req, res) => {
+  // clear cookie
+  res.clearCookie("token");
+  return sendResponse(res, 200, "Logout successful");
 };
