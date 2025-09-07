@@ -11,7 +11,7 @@ import "./src/models/index.js";
 const app = express();
 
 // middlewares
-app.use(morgan("combined"));
+app.use(morgan(":method :url :status :res[content-length] - :response-time ms"));
 app.use(cors());
 app.use(express.json());
 app.use(express.json({ limit: "1gb" }));
@@ -20,6 +20,7 @@ app.use(cookieParser());
 // routes
 app.use("/api/v1", routes);
 
+// database connection
 await initDatabase();
 
 app.listen(process.env.PORT, () => {

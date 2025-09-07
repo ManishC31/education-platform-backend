@@ -1,10 +1,9 @@
 import UserModel from "../models/users.model.js";
-import { ShowLog, ShowError } from "../utils/logger.js";
 import { sendResponse } from "../utils/responses.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-export const loginStudent = async (req, res) => {
-  ShowLog("BODY:", req.body);
+export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -21,7 +20,6 @@ export const loginStudent = async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-    ShowLog("token:", token);
 
     // set token in cookie
     res.cookie("token", token, { httpOnly: true, secure: true, maxAge: 1000 * 60 * 60 * 24 });
@@ -32,12 +30,10 @@ export const loginStudent = async (req, res) => {
     delete user.updated_at;
     return sendResponse(res, 200, "Login successful", { user, token });
   } catch (error) {
-    ShowError(error);
+    console.log("Err in loginUser:", error);
     return sendResponse(res, 500, "Failed to login student");
   }
 };
-
-export const loginInstructor = async (req, res) => {};
 
 export const logoutUser = async (req, res) => {
   // clear cookie

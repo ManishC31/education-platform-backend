@@ -4,3 +4,5 @@
 // import "./category.model.js";
 
 import "./users.model.js";
+import "./educator.model.js";
+import "./student.model.js";
