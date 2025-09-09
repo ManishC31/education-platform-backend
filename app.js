@@ -17,6 +17,11 @@ app.use(express.json());
 app.use(express.json({ limit: "1gb" }));
 app.use(cookieParser());
 
+// testing route
+app.get("/", (req, res) => {
+  res.send("MIND-VISTA is working");
+});
+
 // routes
 app.use("/api/v1", routes);
 
